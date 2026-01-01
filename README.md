@@ -43,11 +43,22 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 
 ## Database Setup
 
+Any PostgreSQL database works. Options:
+
+| Provider | Notes |
+|----------|-------|
+| **Railway** | Add PostgreSQL service, copy `DATABASE_URL` from variables |
+| **Supabase** | Free tier at [supabase.com](https://supabase.com), copy connection string from Settings > Database |
+| **Neon** | Serverless Postgres at [neon.tech](https://neon.tech), free tier available |
+| **Local Docker** | `docker run -e POSTGRES_PASSWORD=pass -p 5432:5432 postgres` |
+
+Set your `DATABASE_URL` then run:
+
 ```bash
 # Generate Prisma client
 npm run db:generate
 
-# Push schema to database
+# Create tables
 npm run db:push
 ```
 
