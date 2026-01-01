@@ -28,6 +28,8 @@
   "homepage": "https://quantish.live",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.23.0",
+    "@polymarket/builder-relayer-client": "^0.0.8",
+    "@polymarket/builder-signing-sdk": "^0.0.8",
     "@polymarket/clob-client": "^5.0.0",
     "@polymarket/order-utils": "^2.0.0",
     "@prisma/client": "^5.22.0",
@@ -58,4 +60,3 @@
     "node": ">=18"
   }
 }
-
