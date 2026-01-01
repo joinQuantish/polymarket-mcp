@@ -1,0 +1,327 @@
+// Prisma Schema for Polymarket Trading Server
+// PostgreSQL database for secure key and order management
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - stores wallet information and encrypted credentials
+model User {
+  id                      String    @id @default(uuid())
+  externalId              String    @unique // Your main app's user identifier
+  
+  // EOA Wallet
+  eoaAddress              String    @unique
+  encryptedPrivateKey     String    // AES-256-CBC encrypted
+  
+  // Safe Wallet (Proxy)
+  safeAddress             String?   @unique
+  safeDeployed            Boolean   @default(false)
+  safeDeployedAt          DateTime?
+  
+  // CLOB API Credentials (encrypted)
+  encryptedApiKey         String?
+  encryptedApiSecret      String?
+  encryptedApiPassphrase  String?
+  apiCredentialsCreatedAt DateTime?
+  
+  // Approvals Status
+  usdcApproved            Boolean   @default(false)
+  ctfApproved             Boolean   @default(false)
+  negRiskApproved         Boolean   @default(false)
+  
+  // Status
+  status                  UserStatus @default(CREATED)
+  
+  // Timestamps
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // Relations
+  orders                  Order[]
+  transactions            Transaction[]
+  positions               Position[]
+  apiKeys                 UserApiKey[]
+
+  @@index([externalId])
+  @@index([eoaAddress])
+  @@index([safeAddress])
+}
+
+// UserApiKey model - secure API keys for MCP authentication
+// API keys are hashed (one-way) so they cannot be recovered
+model UserApiKey {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // The API key hash (bcrypt or similar one-way hash)
+  // We store the hash, not the actual key
+  keyHash         String    @unique
+  
+  // API secret for HMAC request signing (encrypted, not hashed)
+  // This is stored encrypted so we can verify HMAC signatures
+  encryptedSecret String?
+  
+  // Key metadata
+  name            String?   // Optional friendly name like "Production", "Testing"
+  keyPrefix       String    // First 8 chars of key for identification (e.g., "pk_live_a1b2...")
+  
+  // Security
+  lastUsedAt      DateTime?
+  lastUsedIp      String?
+  
+  // Status
+  isActive        Boolean   @default(true)
+  revokedAt       DateTime?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime? // Optional expiration
+  
+  @@index([keyHash])
+  @@index([userId])
+  @@index([keyPrefix])
+}
+
+enum UserStatus {
+  CREATED           // Wallet generated, not yet setup
+  SAFE_DEPLOYING    // Safe deployment in progress
+  SAFE_DEPLOYED     // Safe deployed, needs API creds
+  SETTING_UP        // Creating API creds and approvals
+  READY             // Fully setup, can trade
+  SUSPENDED         // Temporarily disabled
+}
+
+// Order model - tracks all orders placed through the system
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  
+  // Market Info
+  conditionId     String      // Market condition ID
+  tokenId         String      // Outcome token ID
+  
+  // Order Details
+  side            OrderSide
+  price           Float       // 0.01 to 0.99
+  size            Float       // Number of shares
+  orderType       OrderType   @default(LIMIT)
+  expiration      DateTime?   // For GTD orders
+  
+  // CLOB Response
+  clobOrderId     String?     @unique
+  
+  // Execution
+  filledSize      Float       @default(0)
+  avgFillPrice    Float?
+  
+  // Status
+  status          OrderStatus @default(PENDING)
+  statusMessage   String?
+  
+  // Timestamps
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  submittedAt     DateTime?
+  filledAt        DateTime?
+  cancelledAt     DateTime?
+
+  @@index([userId])
+  @@index([clobOrderId])
+  @@index([status])
+  @@index([conditionId])
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderType {
+  LIMIT
+  MARKET
+  GTC     // Good Till Cancelled
+  GTD     // Good Till Date
+  FOK     // Fill Or Kill
+  FAK     // Fill And Kill
+}
+
+enum OrderStatus {
+  PENDING       // Created, not yet submitted
+  SUBMITTING    // Being submitted to CLOB
+  LIVE          // Active on order book
+  MATCHED       // Partially or fully matched
+  FILLED        // Completely filled
+  CANCELLED     // Cancelled by user
+  EXPIRED       // Time expired
+  FAILED        // Submission or execution failed
+}
+
+// Transaction model - tracks blockchain/relayer transactions
+model Transaction {
+  id              String            @id @default(uuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id])
+  
+  // Transaction Type
+  type            TransactionType
+  
+  // Relayer Info
+  relayerTxId     String?           @unique
+  
+  // Blockchain Info
+  txHash          String?           @unique
+  blockNumber     Int?
+  
+  // Status
+  status          TransactionStatus @default(PENDING)
+  statusMessage   String?
+  
+  // Metadata
+  metadata        Json?             // Additional transaction-specific data
+  
+  // Timestamps
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  confirmedAt     DateTime?
+
+  @@index([userId])
+  @@index([txHash])
+  @@index([relayerTxId])
+  @@index([type])
+}
+
+enum TransactionType {
+  SAFE_DEPLOY
+  USDC_APPROVAL
+  CTF_APPROVAL
+  NEG_RISK_APPROVAL
+  SPLIT_POSITION
+  MERGE_POSITION
+  REDEEM_POSITION
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  SUBMITTED
+  EXECUTED
+  MINED
+  CONFIRMED
+  FAILED
+  INVALID
+}
+
+// ActivityLog model - audit trail for admin dashboard
+model ActivityLog {
+  id          String    @id @default(uuid())
+  userId      String?
+  
+  // Activity Info
+  action      String
+  resource    String
+  resourceId  String?
+  
+  // Details
+  details     Json?
+  ipAddress   String?
+  userAgent   String?
+  
+  // Status
+  success     Boolean   @default(true)
+  errorMessage String?
+  
+  // Timestamp
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// AccessCode model - developer access codes for SDK registration
+model AccessCode {
+  id              String    @id @default(uuid())
+  
+  // The access code (e.g., "QNT-XXXX-XXXX-XXXX")
+  code            String    @unique
+  
+  // Who this code is for
+  developerName   String?   // e.g., "Acme Corp", "John Doe"
+  developerEmail  String?
+  notes           String?   // Admin notes
+  
+  // Usage limits
+  maxUses         Int       @default(1)  // How many times it can be used
+  usedCount       Int       @default(0)  // How many times it has been used
+  
+  // Status
+  isActive        Boolean   @default(true)
+  
+  // Expiration
+  expiresAt       DateTime?
+  
+  // Tracking
+  usedBy          String?   // userId who used it (if single use)
+  usedAt          DateTime?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  createdBy       String?   // Admin who created it
+  
+  @@index([code])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+// Position model - tracks user holdings/positions
+model Position {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  // Market Info
+  conditionId     String    // Market condition ID
+  tokenId         String    // Outcome token ID
+  outcome         String    // "Yes" or "No" or outcome name
+  
+  // Position Details
+  size            Float     // Number of shares held
+  avgPrice        Float     // Average entry price
+  currentPrice    Float?    // Current market price
+  
+  // Values
+  initialValue    Float     // Cost basis
+  currentValue    Float?    // Current value
+  realizedPnl     Float     @default(0) // Realized profit/loss
+  
+  // Market Info
+  marketTitle     String?
+  marketSlug      String?
+  negativeRisk    Boolean   @default(false) // CTF vs NegRisk
+  
+  // Claimable Status
+  redeemable      Boolean   @default(false) // Can claim winnings
+  mergeable       Boolean   @default(false) // Can merge YES+NO
+  
+  // Sync
+  lastSyncedAt    DateTime  @default(now())
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, tokenId])
+  @@index([userId])
+  @@index([conditionId])
+  @@index([redeemable])
+}
+

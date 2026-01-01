@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polymarket Trading Server | Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #16161f;
+      --bg-card-hover: #1a1a25;
+      --border-color: #2a2a3a;
+      --text-primary: #f0f0f5;
+      --text-secondary: #9090a0;
+      --text-muted: #606070;
+      --accent-green: #00ff88;
+      --accent-green-dim: rgba(0, 255, 136, 0.15);
+      --accent-blue: #4d9fff;
+      --accent-blue-dim: rgba(77, 159, 255, 0.15);
+      --accent-purple: #a855f7;
+      --accent-purple-dim: rgba(168, 85, 247, 0.15);
+      --accent-orange: #ff8a4c;
+      --accent-orange-dim: rgba(255, 138, 76, 0.15);
+      --accent-red: #ff4d6a;
+      --accent-red-dim: rgba(255, 77, 106, 0.15);
+      --accent-yellow: #ffd93d;
+      --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background Effect */
+    .bg-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 255, 136, 0.08), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 50%, rgba(77, 159, 255, 0.06), transparent),
+        radial-gradient(ellipse 50% 30% at 20% 80%, rgba(168, 85, 247, 0.05), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--bg-primary);
+    }
+
+    .logo-text h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-text span {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .api-key-input {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+    }
+
+    .api-key-input input {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      width: 200px;
+      outline: none;
+    }
+
+    .api-key-input input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-green);
+      color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+      background: #00dd77;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-green);
+    }
+
+    .stat-card .label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card.green .value {
+      background: linear-gradient(135deg, var(--accent-green), #00cc66);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card.blue .value {
+      background: linear-gradient(135deg, var(--accent-blue), #3388ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card.purple .value {
+      background: linear-gradient(135deg, var(--accent-purple), #8833ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card.orange .value {
+      background: linear-gradient(135deg, var(--accent-orange), #ff6622);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Main Content Grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-header h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-body {
+      padding: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .card-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .card-body::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    .card-body::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    /* Status Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-green {
+      background: var(--accent-green-dim);
+      color: var(--accent-green);
+    }
+
+    .badge-blue {
+      background: var(--accent-blue-dim);
+      color: var(--accent-blue);
+    }
+
+    .badge-purple {
+      background: var(--accent-purple-dim);
+      color: var(--accent-purple);
+    }
+
+    .badge-orange {
+      background: var(--accent-orange-dim);
+      color: var(--accent-orange);
+    }
+
+    .badge-red {
+      background: var(--accent-red-dim);
+      color: var(--accent-red);
+    }
+
+    /* Address truncation */
+    .address {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* Actions Panel */
+    .actions-panel {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .action-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .action-card:hover {
+      border-color: var(--accent-green);
+      background: var(--bg-card-hover);
+    }
+
+    .action-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .action-card p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Loading State */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent-green);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.75rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      margin: 1rem;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-header h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent-green);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 200;
+    }
+
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      margin-top: 0.75rem;
+      box-shadow: var(--shadow-lg);
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      border-color: var(--accent-green);
+    }
+
+    .toast.error {
+      border-color: var(--accent-red);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Full width card */
+    .card.full-width {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">P</div>
+        <div class="logo-text">
+          <h1>Polymarket Trading Server</h1>
+          <span>Admin Dashboard</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="api-key-input">
+          <span>🔑</span>
+          <input type="password" id="apiKeyInput" placeholder="Enter Admin API Key" />
+        </div>
+        <button class="btn btn-primary" onclick="connect()">Connect</button>
+        <button class="btn btn-secondary" onclick="refresh()">↻ Refresh</button>
+      </div>
+    </header>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card green">
+        <div class="label">👥 Total Users</div>
+        <div class="value" id="statUsers">-</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="label">✅ Ready Users</div>
+        <div class="value" id="statReady">-</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="label">📋 Total Orders</div>
+        <div class="value" id="statOrders">-</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="label">🔴 Live Orders</div>
+        <div class="value" id="statLive">-</div>
+      </div>
+    </div>
+
+    <!-- Actions Panel -->
+    <div class="actions-panel">
+      <div class="action-card" onclick="openModal('createUser')">
+        <h3>➕ Create User</h3>
+        <p>Generate a new wallet for a user</p>
+      </div>
+      <div class="action-card" onclick="openModal('placeOrder')">
+        <h3>📈 Place Order</h3>
+        <p>Create and submit a market order</p>
+      </div>
+      <div class="action-card" onclick="openModal('searchMarket')">
+        <h3>🔍 Search Markets</h3>
+        <p>Find markets to trade on</p>
+      </div>
+      <div class="action-card" onclick="generateKeys()">
+        <h3>🔐 Generate Keys</h3>
+        <p>Create new encryption keys</p>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid" style="margin-top: 1.5rem;">
+      <!-- Users Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>👥 Recent Users</h2>
+          <span class="badge badge-blue" id="userCount">0</span>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>External ID</th>
+                <th>EOA Address</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="usersTable">
+              <tr><td colspan="3" class="loading"><div class="spinner"></div>Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Positions Card - REAL holdings from Polymarket -->
+      <div class="card full-width">
+        <div class="card-header">
+          <h2>💰 Positions (Real Holdings from Polymarket)</h2>
+          <button class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;" onclick="syncPositions()">🔄 Sync</button>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Token ID</th>
+                <th>Shares Owned</th>
+                <th>Current Value</th>
+                <th>Avg Price</th>
+                <th>Redeemable</th>
+              </tr>
+            </thead>
+            <tbody id="positionsTable">
+              <tr><td colspan="6" class="loading"><div class="spinner"></div>Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Orders Card -->
+      <div class="card full-width">
+        <div class="card-header">
+          <h2>📋 Verified Orders (with CLOB IDs)</h2>
+          <span class="badge badge-purple" id="orderCount">0</span>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>CLOB ID</th>
+                <th>User</th>
+                <th>Safe Wallet</th>
+                <th>Side</th>
+                <th>Price</th>
+                <th>Size</th>
+                <th>Filled</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTable">
+              <tr><td colspan="9" class="loading"><div class="spinner"></div>Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Activity Card -->
+      <div class="card full-width">
+        <div class="card-header">
+          <h2>📊 Recent Activity</h2>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Resource</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="activityTable">
+              <tr><td colspan="4" class="loading"><div class="spinner"></div>Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="createUserModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create New User</h3>
+        <button class="modal-close" onclick="closeModal('createUser')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>External User ID</label>
+          <input type="text" id="newUserExternalId" placeholder="e.g., user_123456" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('createUser')">Cancel</button>
+        <button class="btn btn-primary" onclick="createUser()">Create User</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="placeOrderModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Place Order</h3>
+        <button class="modal-close" onclick="closeModal('placeOrder')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>User ID</label>
+          <input type="text" id="orderUserId" placeholder="User UUID" />
+        </div>
+        <div class="form-group">
+          <label>Token ID</label>
+          <input type="text" id="orderTokenId" placeholder="Token ID from market" />
+        </div>
+        <div class="form-group">
+          <label>Condition ID</label>
+          <input type="text" id="orderConditionId" placeholder="Market condition ID" />
+        </div>
+        <div class="form-group">
+          <label>Side</label>
+          <input type="text" id="orderSide" placeholder="BUY or SELL" />
+        </div>
+        <div class="form-group">
+          <label>Price (0.01 - 0.99)</label>
+          <input type="number" id="orderPrice" placeholder="0.50" step="0.01" min="0.01" max="0.99" />
+        </div>
+        <div class="form-group">
+          <label>Size (shares)</label>
+          <input type="number" id="orderSize" placeholder="100" step="1" min="1" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('placeOrder')">Cancel</button>
+        <button class="btn btn-primary" onclick="placeOrder()">Place Order</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="searchMarketModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Search Markets</h3>
+        <button class="modal-close" onclick="closeModal('searchMarket')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Search Query</label>
+          <input type="text" id="marketQuery" placeholder="e.g., Bitcoin, Election" />
+        </div>
+        <div id="marketResults" style="margin-top: 1rem;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('searchMarket')">Close</button>
+        <button class="btn btn-primary" onclick="searchMarkets()">Search</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    let apiKey = localStorage.getItem('adminApiKey') || '';
+    
+    // Initialize
+    document.getElementById('apiKeyInput').value = apiKey;
+    if (apiKey) {
+      loadData();
+    }
+
+    function connect() {
+      apiKey = document.getElementById('apiKeyInput').value;
+      localStorage.setItem('adminApiKey', apiKey);
+      loadData();
+    }
+
+    function refresh() {
+      loadData();
+    }
+
+    async function loadData() {
+      if (!apiKey) {
+        showToast('Please enter API key', 'error');
+        return;
+      }
+
+      try {
+        // Load stats
+        const statsRes = await fetch('/api/admin/stats', {
+          headers: { 'x-api-key': apiKey }
+        });
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          document.getElementById('statUsers').textContent = stats.data.users.total;
+          document.getElementById('statReady').textContent = stats.data.users.ready;
+          document.getElementById('statOrders').textContent = stats.data.orders.total;
+          document.getElementById('statLive').textContent = stats.data.orders.live;
+        }
+
+        // Load users
+        const usersRes = await fetch('/api/users?limit=10', {
+          headers: { 'x-api-key': apiKey }
+        });
+        if (usersRes.ok) {
+          const users = await usersRes.json();
+          document.getElementById('userCount').textContent = users.data.pagination.total;
+          renderUsers(users.data.users);
+        }
+
+        // Load activity
+        const activityRes = await fetch('/api/admin/activity?limit=10', {
+          headers: { 'x-api-key': apiKey }
+        });
+        if (activityRes.ok) {
+          const activity = await activityRes.json();
+          renderActivity(activity.data.logs);
+        }
+
+        // Load orders
+        const ordersRes = await fetch('/api/admin/orders?limit=20', {
+          headers: { 'x-api-key': apiKey }
+        });
+        if (ordersRes.ok) {
+          const orders = await ordersRes.json();
+          document.getElementById('orderCount').textContent = orders.data.pagination.total;
+          renderOrders(orders.data.orders);
+        }
+
+        // Load positions for all users
+        await loadAllPositions();
+
+        showToast('Data loaded successfully', 'success');
+      } catch (error) {
+        showToast('Failed to load data: ' + error.message, 'error');
+      }
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('usersTable');
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No users found</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = users.map(user => `
+        <tr>
+          <td>${user.externalId}</td>
+          <td class="address">${truncateAddress(user.eoaAddress)}</td>
+          <td><span class="badge ${getStatusBadgeClass(user.status)}">${user.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderActivity(logs) {
+      const tbody = document.getElementById('activityTable');
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No activity yet</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td>${formatTime(log.createdAt)}</td>
+          <td>${log.action}</td>
+          <td>${log.resource}${log.resourceId ? ' / ' + truncateId(log.resourceId) : ''}</td>
+          <td><span class="badge ${log.success ? 'badge-green' : 'badge-red'}">${log.success ? 'OK' : 'FAIL'}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderOrders(orders) {
+      const tbody = document.getElementById('ordersTable');
+      
+      // ONLY SHOW REAL ORDERS - ones with actual CLOB IDs from Polymarket
+      const realOrders = orders.filter(o => o.clobOrderId);
+      
+      if (realOrders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No verified orders from Polymarket</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = realOrders.map(order => `
+        <tr>
+          <td class="address" title="CLOB: ${order.clobOrderId}">${truncateId(order.clobOrderId)}</td>
+          <td>${order.user?.externalId || 'Unknown'}</td>
+          <td class="address" title="${order.user?.safeAddress || ''}">${truncateAddress(order.user?.safeAddress)}</td>
+          <td><span class="badge ${order.side === 'BUY' ? 'badge-green' : 'badge-red'}">${order.side}</span></td>
+          <td>$${order.price.toFixed(2)}</td>
+          <td>${order.size}</td>
+          <td>${order.filledSize || 0}</td>
+          <td><span class="badge ${getOrderStatusBadgeClass(order.status)}">${order.status}</span></td>
+          <td>
+            ${order.status === 'LIVE' ? `<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="cancelOrder('${order.user?.id}', '${order.id}')">Cancel</button>` : '-'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getOrderStatusBadgeClass(status) {
+      const classes = {
+        'PENDING': 'badge-blue',
+        'LIVE': 'badge-green',
+        'MATCHED': 'badge-purple',
+        'FILLED': 'badge-purple',
+        'PARTIALLY_FILLED': 'badge-orange',
+        'CANCELLED': 'badge-red',
+        'EXPIRED': 'badge-red',
+        'FAILED': 'badge-red'
+      };
+      return classes[status] || 'badge-blue';
+    }
+
+    // Load positions for all ready users
+    async function loadAllPositions() {
+      try {
+        // Get all users
+        const usersRes = await fetch('/api/users?limit=50', {
+          headers: { 'x-api-key': apiKey }
+        });
+        if (!usersRes.ok) return;
+        
+        const users = await usersRes.json();
+        const readyUsers = users.data.users.filter(u => u.status === 'READY');
+        
+        let allPositions = [];
+        
+        // Get positions for each ready user
+        for (const user of readyUsers) {
+          try {
+            const posRes = await fetch(`/api/positions/${user.id}`, {
+              headers: { 'x-api-key': apiKey }
+            });
+            if (posRes.ok) {
+              const posData = await posRes.json();
+              if (posData.data && posData.data.length > 0) {
+                posData.data.forEach(pos => {
+                  allPositions.push({
+                    ...pos,
+                    userExternalId: user.externalId,
+                    userId: user.id
+                  });
+                });
+              }
+            }
+          } catch (e) {
+            console.log('Error loading positions for user', user.id);
+          }
+        }
+        
+        renderPositions(allPositions);
+      } catch (error) {
+        console.error('Error loading positions:', error);
+      }
+    }
+
+    function renderPositions(positions) {
+      const tbody = document.getElementById('positionsTable');
+      
+      if (positions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No positions found</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = positions.map(pos => `
+        <tr>
+          <td>${pos.userExternalId || 'Unknown'}</td>
+          <td class="address" title="${pos.tokenId}">${truncateId(pos.tokenId)}</td>
+          <td style="font-weight: 600; color: var(--accent-green);">${pos.size.toFixed(2)}</td>
+          <td style="font-weight: 600; color: var(--accent-blue);">$${(pos.currentValue || 0).toFixed(4)}</td>
+          <td>$${(pos.avgPrice || 0).toFixed(4)}</td>
+          <td><span class="badge ${pos.redeemable ? 'badge-green' : 'badge-blue'}">${pos.redeemable ? 'YES' : 'NO'}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    async function syncPositions() {
+      showToast('Syncing positions from Polymarket...', 'success');
+      
+      // Get all ready users and sync their positions
+      const usersRes = await fetch('/api/users?limit=50', {
+        headers: { 'x-api-key': apiKey }
+      });
+      if (!usersRes.ok) return;
+      
+      const users = await usersRes.json();
+      const readyUsers = users.data.users.filter(u => u.status === 'READY');
+      
+      for (const user of readyUsers) {
+        try {
+          await fetch(`/api/positions/${user.id}/sync`, {
+            method: 'POST',
+            headers: { 'x-api-key': apiKey }
+          });
+        } catch (e) {}
+      }
+      
+      await loadAllPositions();
+      showToast('Positions synced from Polymarket', 'success');
+    }
+
+    async function cancelOrder(userId, orderId) {
+      if (!confirm('Are you sure you want to cancel this order?')) return;
+      
+      try {
+        const res = await fetch(`/api/orders/${orderId}/cancel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+          },
+          body: JSON.stringify({ userId })
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Order cancelled successfully', 'success');
+          loadData();
+        } else {
+          showToast(data.message || 'Failed to cancel order', 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function syncOrder(orderId) {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/sync`, {
+          method: 'POST',
+          headers: { 'x-api-key': apiKey }
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Order synced: ' + data.data.status, 'success');
+          loadData();
+        } else {
+          showToast(data.message || 'Failed to sync order', 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    function getStatusBadgeClass(status) {
+      const classes = {
+        'CREATED': 'badge-blue',
+        'SAFE_DEPLOYING': 'badge-orange',
+        'SAFE_DEPLOYED': 'badge-purple',
+        'SETTING_UP': 'badge-orange',
+        'READY': 'badge-green',
+        'SUSPENDED': 'badge-red'
+      };
+      return classes[status] || 'badge-blue';
+    }
+
+    function truncateAddress(addr) {
+      if (!addr) return '-';
+      return addr.slice(0, 6) + '...' + addr.slice(-4);
+    }
+
+    function truncateId(id) {
+      if (!id) return '-';
+      return id.slice(0, 8) + '...';
+    }
+
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString();
+    }
+
+    function openModal(name) {
+      document.getElementById(name + 'Modal').classList.add('active');
+    }
+
+    function closeModal(name) {
+      document.getElementById(name + 'Modal').classList.remove('active');
+    }
+
+    async function createUser() {
+      const externalId = document.getElementById('newUserExternalId').value;
+      if (!externalId) {
+        showToast('External ID is required', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+          },
+          body: JSON.stringify({ externalId })
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+          showToast('User created: ' + data.data.eoaAddress, 'success');
+          closeModal('createUser');
+          loadData();
+        } else {
+          showToast(data.message || 'Failed to create user', 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function placeOrder() {
+      const userId = document.getElementById('orderUserId').value;
+      const tokenId = document.getElementById('orderTokenId').value;
+      const conditionId = document.getElementById('orderConditionId').value;
+      const side = document.getElementById('orderSide').value.toUpperCase();
+      const price = parseFloat(document.getElementById('orderPrice').value);
+      const size = parseFloat(document.getElementById('orderSize').value);
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+          },
+          body: JSON.stringify({ userId, tokenId, conditionId, side, price, size })
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Order placed: ' + data.data.orderId, 'success');
+          closeModal('placeOrder');
+          loadData();
+        } else {
+          showToast(data.message || 'Failed to place order', 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function searchMarkets() {
+      const query = document.getElementById('marketQuery').value;
+      if (!query) {
+        showToast('Search query is required', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/markets/search?q=' + encodeURIComponent(query));
+        const data = await res.json();
+        
+        if (res.ok && data.data.length > 0) {
+          document.getElementById('marketResults').innerHTML = data.data.map(market => `
+            <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
+              <div style="font-weight: 600;">${market.question || market.slug}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Condition: ${truncateId(market.conditionId)}<br>
+                ${market.tokens ? 'Token: ' + truncateId(market.tokens[0]?.token_id) : ''}
+              </div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('marketResults').innerHTML = '<div class="empty-state">No markets found</div>';
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function generateKeys() {
+      try {
+        const res = await fetch('/api/admin/generate-keys', {
+          headers: { 'x-api-key': apiKey }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          alert(`New Encryption Keys Generated:\n\nENCRYPTION_KEY=${data.data.ENCRYPTION_KEY}\n\nENCRYPTION_IV=${data.data.ENCRYPTION_IV}\n\n⚠️ Save these securely!`);
+        } else {
+          showToast(data.message || 'Failed to generate keys', 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
+
