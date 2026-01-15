@@ -39,6 +39,14 @@ export const TOOLS: Tool[] = [
         keyName: {
           type: 'string',
           description: 'Optional friendly name for this API key (e.g., "Production", "Testing")'
+        },
+        signature: {
+          type: 'string',
+          description: 'HMAC-SHA256 signature for returning users (trusted bots only). Format: HMAC(externalId:timestamp, BOT_SIGNING_SECRET)'
+        },
+        timestamp: {
+          type: 'string',
+          description: 'Unix timestamp in milliseconds for signature verification (must be within 5 minutes)'
         }
       },
       required: ['externalId']
@@ -750,34 +758,84 @@ export async function executeTool(
   // PUBLIC TOOL (No Authentication Required)
   // ============================================
   if (name === 'request_api_key') {
-    const { externalId, keyName, accessCode } = args as { externalId: string; keyName?: string; accessCode?: string };
-    
+    const { externalId, keyName, signature, timestamp } = args as {
+      externalId: string;
+      keyName?: string;
+      signature?: string;
+      timestamp?: string;
+    };
+
     if (!externalId) {
       throw new Error('externalId is required');
     }
-
-    // Access code is optional - if provided, validate it, but don't require it
-    // This allows the tool to work without access codes for development/testing
-    // Note: The deployed version may still require access codes - this change will make it optional
 
     // Check if user already exists
     let user = await prisma.user.findUnique({
       where: { externalId },
     });
 
-    if (!user) {
-      // Create new user with wallet
-      const result = await walletService.createUser(externalId);
-      user = await prisma.user.findUnique({
-        where: { id: result.userId },
-      });
+    // If user exists, they need to prove ownership to get a new API key
+    if (user) {
+      // Check for HMAC signature from trusted bot
+      const botSecret = process.env.BOT_SIGNING_SECRET;
+
+      if (signature && timestamp && botSecret) {
+        // Verify HMAC signature: HMAC-SHA256(externalId:timestamp, secret)
+        const crypto = await import('crypto');
+        const expectedSig = crypto
+          .createHmac('sha256', botSecret)
+          .update(`${externalId}:${timestamp}`)
+          .digest('hex');
+
+        // Check timestamp is within 5 minutes
+        const now = Date.now();
+        const reqTime = parseInt(timestamp);
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (Math.abs(now - reqTime) > fiveMinutes) {
+          throw new Error('Request timestamp expired. Please try again.');
+        }
+
+        if (signature !== expectedSig) {
+          throw new Error('Invalid signature. Authentication failed.');
+        }
+
+        // Signature valid - issue new API key for returning user
+        const keyResult = await apiKeyService.createApiKey(user.id, keyName);
+
+        return {
+          success: true,
+          apiKey: keyResult.apiKey,
+          apiSecret: keyResult.apiSecret,
+          keyPrefix: keyResult.keyPrefix,
+          eoaAddress: user.eoaAddress,
+          safeAddress: user.safeAddress,
+          message: 'Welcome back! New API key created for your existing account.',
+        };
+      }
+
+      // No valid signature - don't issue new API key for security
+      return {
+        success: false,
+        existingAccount: true,
+        eoaAddress: user.eoaAddress,
+        safeAddress: user.safeAddress,
+        message: 'Account already exists for this ID.',
+        instructions: 'Use your existing API key. If you lost it, contact support for recovery.',
+      };
     }
+
+    // New user - create account with wallet
+    const result = await walletService.createUser(externalId);
+    user = await prisma.user.findUnique({
+      where: { id: result.userId },
+    });
 
     if (!user) {
       throw new Error('Failed to create user');
     }
 
-    // Generate new API key with secret
+    // Generate new API key with secret for new user
     const keyResult = await apiKeyService.createApiKey(user.id, keyName);
 
     return {
