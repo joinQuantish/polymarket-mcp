@@ -36,3 +36,6 @@ prisma/*.db-journal
 passwords.txt
 secrets.txt
 
+
+# MCP Registry auth tokens
+.mcpregistry_*

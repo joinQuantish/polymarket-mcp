@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.joinQuantish/polymarket",
+  "title": "Polymarket MCP Server",
+  "description": "Self-hosted MCP server for AI agent trading on Polymarket prediction markets",
+  "repository": {
+    "url": "https://github.com/joinQuantish/polymarket-mcp",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@quantish/polymarket-server",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "PostgreSQL connection string for market data and user storage",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true,
+          "name": "DATABASE_URL"
+        },
+        {
+          "description": "AES-256 encryption key for securing wallet credentials at rest",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true,
+          "name": "ENCRYPTION_KEY"
+        },
+        {
+          "description": "Polygon RPC endpoint URL for blockchain interactions",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "POLYGON_RPC_URL"
+        },
+        {
+          "description": "Port for the HTTP server",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "PORT"
+        }
+      ]
+    }
+  ]
+}

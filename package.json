@@ -1,6 +1,7 @@
 {
   "name": "@quantish/polymarket-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "mcpName": "io.github.joinQuantish/polymarket",
   "description": "Self-hosted Polymarket MCP server for trading on Polymarket prediction markets",
   "main": "dist/index.js",
   "scripts": {
