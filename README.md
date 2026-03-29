@@ -1,5 +1,7 @@
 # Polymarket MCP Server
 
+> **⚠️ Notice: Quantish is winding down.** The Quantish platform (quantish.live) is shutting down. This MCP server is self-hosted and will continue to work independently, but the Quantish team will no longer be maintaining or updating this project. If you're building in the prediction market space and need real-time data infrastructure, check out [polynode.dev](https://polynode.dev).
+
 Self-hosted MCP server for trading on Polymarket prediction markets.
 
 ## Overview
